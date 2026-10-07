@@ -15,7 +15,7 @@
 }
 .lr-live-lead.on{opacity:1}
 .lr-live-band{
-  position:absolute;left:-6vw;top:50%;width:112vw;height:min(68vh,620px);
+  position:absolute;left:-6vw;top:50%;width:112vw;height:min(78vh,720px);
   transform:translateY(-50%) translateX(-115%);
   overflow:hidden;background:#05050b;
   clip-path:polygon(0 22%,100% 0,100% 78%,0 100%);
@@ -53,7 +53,7 @@
   100%{transform:translateX(120%)}
 }
 @media (orientation:landscape) and (max-height:700px){
-  .lr-live-band{height:min(78vh,560px)}
+  .lr-live-band{height:min(90vh,680px)}
 }
 
 </style></head><body>
@@ -818,6 +818,10 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
           <button class="btn main" id="ytUpdate">再生リストからMVデータを更新</button>
           <button class="btn" id="ytClearAuto">自動MVデータを消去</button>
         </div>
+        <div class="ytrow">
+          <button class="btn" id="ytExportShared" type="button">共有MVデータを書き出す</button>
+          <span class="pool">GitHub Pagesの全端末向け: data/mv-data.json</span>
+        </div>
         <div class="ytstatus" id="ytStatus">APIキーと公開再生リストを保存してから「再生リストからMVデータを更新」を押してください。</div>
         <details class="ytdiag" id="ytDiag" hidden>
           <summary id="ytDiagSummary">未照合の詳細</summary>
@@ -934,6 +938,7 @@ const STORE="ikonoijoy-gacha-v2";
 const OLD_STORE="ikonoijoy-gacha-v1";
 const YT_KEY_STORE="ikonoijoy-youtube-api-key";
 const YT_PLAYLIST_STORE="ikonoijoy-youtube-playlist";
+const SHARED_MV_URL="data/mv-data.json";
 const reduce=matchMedia("(prefers-reduced-motion: reduce)").matches;
 const IS_ADMIN=new URLSearchParams(location.search).get("admin")==="1";
 const JA_COLLATOR=new Intl.Collator("ja",{numeric:true,sensitivity:"base"});
@@ -993,6 +998,52 @@ try{
   if(saved){Object.assign(state.groups,saved.groups||{});state.rar=saved.rar||{};state.drawn=Array.isArray(saved.drawn)?saved.drawn:[];state.mv=saved.mv||{};state.mvUpdatedAt=saved.mvUpdatedAt||null;state.mvOrder=Array.isArray(saved.mvOrder)?saved.mvOrder:[];state.rarityMix={...DEFAULT_RARITY_MIX,...(saved.rarityMix||{})};}
 }catch(e){}
 function save(){try{localStorage.setItem(STORE,JSON.stringify(state))}catch(e){}}
+function sharedMvPayload(){
+  return {
+    version:1,
+    updatedAt:new Date().toISOString(),
+    mvUpdatedAt:state.mvUpdatedAt||new Date().toISOString(),
+    mvOrder:Array.isArray(state.mvOrder)?state.mvOrder:[],
+    rarityMix:{...state.rarityMix},
+    mv:state.mv||{}
+  };
+}
+async function loadSharedMvData(){
+  try{
+    const res=await fetch(`${SHARED_MV_URL}?t=${Date.now()}`,{cache:"no-store"});
+    if(!res.ok)return false;
+    const data=await res.json();
+    if(!data||!data.mv||!Object.keys(data.mv).length)return false;
+    const localTime=Date.parse(state.mvUpdatedAt||"")||0;
+    const sharedTime=Date.parse(data.mvUpdatedAt||data.updatedAt||"")||0;
+    const localHas=Object.keys(state.mv||{}).length>0;
+    // 一般ユーザーは公開JSONを優先。管理者は自分の方が新しければローカルを保持。
+    if(!IS_ADMIN||!localHas||sharedTime>=localTime){
+      state.mv=data.mv||{};
+      state.mvOrder=Array.isArray(data.mvOrder)?data.mvOrder:[];
+      state.mvUpdatedAt=data.mvUpdatedAt||data.updatedAt||null;
+      if(data.rarityMix)state.rarityMix={...DEFAULT_RARITY_MIX,...data.rarityMix};
+      normalizeRarityMix();
+      assignRelativeRarities(state.mv);
+      save();
+      return true;
+    }
+  }catch(e){console.warn("共有MVデータの読み込みに失敗:",e)}
+  return false;
+}
+function exportSharedMvData(){
+  if(!Object.keys(state.mv||{}).length){
+    ytSetStatus("先にYouTube MVデータを更新してください。",true);
+    return;
+  }
+  const blob=new Blob([JSON.stringify(sharedMvPayload(),null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download="mv-data.json";
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1200);
+  ytSetStatus("mv-data.json を書き出しました。GitHub の docs/data/mv-data.json と置き換えると全端末に反映されます。");
+}
 function normalizeRarityMix(){
   const m={};
   let sum=0;
@@ -1071,12 +1122,24 @@ const SPECIAL_LR_MEDIA={
 };
 let pendingSingleSong=null;
 let specialAudioPrimed=false;
+let specialRevealAudioActive=false;
 function isSpecialLrSong(s){return Number(s?.[0])===SPECIAL_LR_SONG_ID}
 function prepareSpecialMediaSources(){
   const v=$("specialLrVisual"),a1=$("specialLrIntroAudio"),a2=$("specialLrRevealAudio");
   if(v&&!v.getAttribute("src"))v.src=SPECIAL_LR_MEDIA.visual;
   if(a1&&!a1.getAttribute("src"))a1.src=SPECIAL_LR_MEDIA.introAudio;
   if(a2&&!a2.getAttribute("src"))a2.src=SPECIAL_LR_MEDIA.revealAudio;
+  if(a2&&!a2.dataset.trimLoop){
+    a2.dataset.trimLoop="1";
+    a2.loop=false;
+    a2.addEventListener("ended",()=>{
+      if(!specialRevealAudioActive)return;
+      try{
+        a2.currentTime=.3;
+        const p=a2.play();if(p?.catch)p.catch(()=>{});
+      }catch(e){}
+    });
+  }
 }
 function primeSpecialLrAudio(s){
   if(!isSpecialLrSong(s))return;
@@ -1092,6 +1155,7 @@ function primeSpecialLrAudio(s){
 }
 function stopSpecialLrMedia(){
   const v=$("specialLrVisual"),a1=$("specialLrIntroAudio"),a2=$("specialLrRevealAudio"),lead=$("specialLrLead");
+  specialRevealAudioActive=false;
   [v,a1,a2].forEach(m=>{if(!m)return;try{m.pause();m.currentTime=0}catch(e){}});
   if(a1)a1.volume=0;if(a2)a2.volume=0;
   if(lead){lead.classList.remove("on");lead.hidden=true}
@@ -1134,8 +1198,10 @@ function startSpecialRevealAudio(s){
   if(!isSpecialLrSong(s))return;
   prepareSpecialMediaSources();
   const a2=$("specialLrRevealAudio");
+  specialRevealAudioActive=true;
   try{
-    a2.currentTime=0;a2.volume=.94;
+    // 二個目の音声は冒頭0.3秒を飛ばす。
+    a2.currentTime=.3;a2.volume=.94;
     if(a2.paused){const p=a2.play();if(p?.catch)p.catch(()=>{})}
   }catch(e){}
 }
@@ -1389,9 +1455,8 @@ async function playLrCutscene(s){
   void box.offsetWidth;
   box.classList.add("phase-reveal");
   if(isSpecialLrSong(s)){
-    await sleep(2230);
-    await finishSpecialRevealAudio(s);
-    await sleep(60);
+    // 二個目の音声はここで止めず、結果画面/10連画面を閉じるまで継続する。
+    await sleep(2290);
   }else{
     await sleep(2750);
   }
@@ -1902,7 +1967,7 @@ async function updateMvData(){
     const miss=SONGS.length-total;
     const unused=videos.length-ids.length;
     const mix=state.rarityMix;
-    ytSetStatus(`更新完了。再生リスト ${videos.length}本 / MV照合 ${total}曲 / ${SONGS.length}曲。未照合 ${miss}曲。未使用動画 ${unused}本。\n自動レア度は各グループ内の再生回数順で相対評価しています。割合: LR ${mix.LR}% / UR ${mix.UR}% / SR ${mix.SR}% / R ${mix.R}% / N ${rarityMixN()}%。`);
+    ytSetStatus(`更新完了。再生リスト ${videos.length}本 / MV照合 ${total}曲 / ${SONGS.length}曲。未照合 ${miss}曲。未使用動画 ${unused}本。\n自動レア度は各グループ内の再生回数順で相対評価しています。割合: LR ${mix.LR}% / UR ${mix.UR}% / SR ${mix.SR}% / R ${mix.R}% / N ${rarityMixN()}%。\n全端末へ反映する場合は「共有MVデータを書き出す」で mv-data.json を作成してください。`);
   }catch(e){
     console.error(e);ytSetStatus(`更新に失敗しました。\n${e.message}`,true);
   }finally{btn.disabled=false}
@@ -1929,6 +1994,7 @@ function initYouTubeUi(){
   $("ytSavePlaylist").addEventListener("click",savePlaylist);
   $("ytUpdate").addEventListener("click",updateMvData);
   $("ytClearAuto").addEventListener("click",clearAutoMv);
+  $("ytExportShared")?.addEventListener("click",exportSharedMvData);
 }
 
 /* ---------- views / settings gear ---------- */
@@ -1943,7 +2009,11 @@ function show(v){
 $("settingsBack").addEventListener("click",()=>show("gacha"));
 $("adminBack").addEventListener("click",()=>show("settings"));
 if(IS_ADMIN){$("openAdmin").hidden=false;$("openAdmin").addEventListener("click",()=>show("admin"))}
-renderGacha();renderGroups();renderFilters();initRarityMixUi();renderList();initYouTubeUi();initGachaUi();renderCarousel();
+async function bootApp(){
+  await loadSharedMvData();
+  renderGacha();renderGroups();renderFilters();initRarityMixUi();renderList();initYouTubeUi();initGachaUi();renderCarousel();
+}
+bootApp();
 
 </script>
 
