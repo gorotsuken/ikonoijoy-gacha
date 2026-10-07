@@ -891,8 +891,8 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
     <div class="lr-live-sheen"></div>
   </div>
 </div>
-<audio id="specialLrIntroAudio" preload="auto" loop></audio>
-<audio id="specialLrRevealAudio" preload="auto" loop></audio>
+<audio id="specialLrIntroAudio" preload="auto" loop muted></audio>
+<audio id="specialLrRevealAudio" preload="auto" muted></audio>
 
 <div class="lr-cutscene" id="lrCutscene" hidden>
   <div class="lr-intro" id="lrIntro">
@@ -1153,20 +1153,25 @@ function primeSpecialLrAudio(s){
   prepareSpecialMediaSources();
   const a1=$("specialLrIntroAudio"),a2=$("specialLrRevealAudio");
   specialAudioPrimed=true;
+  specialRevealAudioActive=false;
+  // iPhoneでは volume=0 だけだと先読み音声が聞こえることがあるため、
+  // 実際に演出が始まるまでは muted を使って完全に無音で先読みする。
   try{
-    a1.loop=true;a1.volume=0;a1.currentTime=0;
+    a1.loop=true;a1.muted=true;a1.volume=1;a1.currentTime=0;
     const p1=a1.play();if(p1?.catch)p1.catch(()=>{});
   }catch(e){}
   try{
-    a2.loop=false;a2.volume=0;a2.currentTime=.6;
+    a2.loop=false;a2.muted=true;a2.volume=1;a2.currentTime=.6;
     const p2=a2.play();if(p2?.catch)p2.catch(()=>{});
   }catch(e){}
 }
 function stopSpecialLrMedia(){
   const v=$("specialLrVisual"),a1=$("specialLrIntroAudio"),a2=$("specialLrRevealAudio"),lead=$("specialLrLead");
   specialRevealAudioActive=false;
+  if(a1)a1.muted=true;
+  if(a2)a2.muted=true;
   [v,a1,a2].forEach(m=>{if(!m)return;try{m.pause();m.currentTime=0}catch(e){}});
-  if(a1)a1.volume=0;if(a2)a2.volume=0;
+  if(a1)a1.volume=1;if(a2)a2.volume=1;
   if(lead){lead.classList.remove("on");lead.hidden=true}
   specialAudioPrimed=false;
 }
@@ -1188,9 +1193,10 @@ async function playSpecialLrLead(s){
   const lead=$("specialLrLead"),v=$("specialLrVisual"),a1=$("specialLrIntroAudio"),a2=$("specialLrRevealAudio");
   try{v.currentTime=0;v.muted=true;const p=v.play();if(p?.catch)p.catch(()=>{})}catch(e){}
   try{
-    a1.currentTime=0;a1.volume=.92;
+    // 1個目だけここで解禁。2個目はまだ完全ミュートのまま。
+    a1.currentTime=0;a1.volume=1;a1.muted=false;
     if(a1.paused){const p=a1.play();if(p?.catch)p.catch(()=>{})}
-    a2.currentTime=0;a2.volume=0;
+    a2.currentTime=.6;a2.volume=1;a2.muted=true;
     if(a2.paused){const p=a2.play();if(p?.catch)p.catch(()=>{})}
   }catch(e){}
   lead.hidden=false;lead.classList.remove("on");void lead.offsetWidth;lead.classList.add("on");
@@ -1201,7 +1207,7 @@ async function playSpecialLrLead(s){
   await sleep(120);
   lead.hidden=true;
   try{v.pause();v.currentTime=0}catch(e){}
-  try{a1.pause();a1.currentTime=0}catch(e){}
+  try{a1.muted=true;a1.pause();a1.currentTime=0}catch(e){}
 }
 function startSpecialRevealAudio(s){
   if(!isSpecialLrSong(s))return;
@@ -1209,8 +1215,8 @@ function startSpecialRevealAudio(s){
   const a2=$("specialLrRevealAudio");
   specialRevealAudioActive=true;
   try{
-    // 二個目の音声は冒頭0.6秒を飛ばす。
-    a2.loop=false;a2.currentTime=.6;a2.volume=.94;
+    // 二個目の音声は冒頭0.6秒を飛ばし、このタイミングで初めて音を出す。
+    a2.loop=false;a2.currentTime=.6;a2.volume=1;a2.muted=false;
     if(a2.paused){const p=a2.play();if(p?.catch)p.catch(()=>{})}
   }catch(e){}
 }
