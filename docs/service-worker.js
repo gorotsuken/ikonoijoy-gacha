@@ -1,4 +1,4 @@
-const CACHE = 'ikonoijoy-gacha-pwa-v3';
+const CACHE = 'ikonoijoy-gacha-pwa-v4';
 const PRECACHE = [
   './',
   './index.html',
