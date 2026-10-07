@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "updatedAt": null,
+  "mvUpdatedAt": null,
+  "mvOrder": [],
+  "rarityMix": {
+    "LR": 5,
+    "UR": 10,
+    "SR": 20,
+    "R": 25
+  },
+  "mv": {}
+}
