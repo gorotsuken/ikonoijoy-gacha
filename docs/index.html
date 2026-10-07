@@ -253,6 +253,11 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
 .row .t{font-weight:500;min-width:0;word-break:break-word;flex:1}
 .row .c{font-size:11px;color:var(--ink-dim);flex:none;max-width:40%;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .got{font-size:10px;color:var(--ink-dim);border:1px solid var(--line);border-radius:6px;padding:0 5px;flex:none}
+.row.song-off{opacity:.58}
+.row.song-off .t{text-decoration:line-through;text-decoration-thickness:1px}
+.songinclude{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:7px 9px;border-radius:9px;background:var(--panel-2);border:1px solid var(--line);font-size:11px;color:var(--ink-dim)}
+.songinclude b{color:var(--ink);font-size:12px}
+.songinclude .sw{flex:none}
 .seg{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
 .seg button{padding:6px 0;border-radius:8px;border:1px solid var(--line);background:var(--panel-2);cursor:pointer;font-family:var(--f-latin);font-weight:900;font-size:12px;color:var(--ink-dim)}
 .seg button[aria-pressed="true"]{color:var(--rt);border-color:rgba(60,50,110,.18);background:linear-gradient(180deg,var(--c1),var(--c2))}
@@ -991,11 +996,11 @@ function kanaSortKey(title){
 }
 const $=id=>document.getElementById(id);
 
-let state={groups:{"=LOVE":true,"≠ME":true,"≒JOY":true,"その他":true},rar:{},drawn:[],mv:{},mvUpdatedAt:null,mvOrder:[],rarityMix:{...DEFAULT_RARITY_MIX}};
+let state={groups:{"=LOVE":true,"≠ME":true,"≒JOY":true,"その他":true},songEnabled:{},rar:{},drawn:[],mv:{},mvUpdatedAt:null,mvOrder:[],rarityMix:{...DEFAULT_RARITY_MIX}};
 try{
   const raw=localStorage.getItem(STORE)||localStorage.getItem(OLD_STORE)||"null";
   const saved=JSON.parse(raw);
-  if(saved){Object.assign(state.groups,saved.groups||{});state.rar=saved.rar||{};state.drawn=Array.isArray(saved.drawn)?saved.drawn:[];state.mv=saved.mv||{};state.mvUpdatedAt=saved.mvUpdatedAt||null;state.mvOrder=Array.isArray(saved.mvOrder)?saved.mvOrder:[];state.rarityMix={...DEFAULT_RARITY_MIX,...(saved.rarityMix||{})};}
+  if(saved){Object.assign(state.groups,saved.groups||{});state.songEnabled=saved.songEnabled&&typeof saved.songEnabled==="object"?saved.songEnabled:{};state.rar=saved.rar||{};state.drawn=Array.isArray(saved.drawn)?saved.drawn:[];state.mv=saved.mv||{};state.mvUpdatedAt=saved.mvUpdatedAt||null;state.mvOrder=Array.isArray(saved.mvOrder)?saved.mvOrder:[];state.rarityMix={...DEFAULT_RARITY_MIX,...(saved.rarityMix||{})};}
 }catch(e){}
 function save(){try{localStorage.setItem(STORE,JSON.stringify(state))}catch(e){}}
 function sharedMvPayload(){
@@ -1060,7 +1065,8 @@ normalizeRarityMix();
 function rarityMixN(){return Math.max(0,100-MIX_RARITIES.reduce((n,r)=>n+(state.rarityMix[r]||0),0))}
 const autoMv=id=>state.mv[String(id)]||state.mv[id]||null;
 const rarOf=id=>state.rar[id]||autoMv(id)?.rarity||"N";
-const enabled=()=>SONGS.filter(s=>state.groups[s[1]]);
+const isSongEnabled=id=>state.songEnabled[String(id)]!==false&&state.songEnabled[id]!==false;
+const enabled=()=>SONGS.filter(s=>state.groups[s[1]]&&isSongEnabled(s[0]));
 const drawnSet=()=>new Set(state.drawn);
 const pool=()=>{const d=drawnSet();return enabled().filter(s=>!d.has(s[0]))};
 const byId=Object.fromEntries(SONGS.map(s=>[s[0],s]));
@@ -1069,6 +1075,7 @@ const releaseNo=Object.fromEntries(SONGS.map((s,i)=>[s[0],i+1]));
 state.drawn=state.drawn.filter(id=>byId[id]);
 Object.keys(state.rar).forEach(id=>{if(!byId[id])delete state.rar[id]});
 Object.keys(state.mv).forEach(id=>{if(!byId[id])delete state.mv[id]});
+Object.keys(state.songEnabled||{}).forEach(id=>{if(!byId[id])delete state.songEnabled[id]});
 save();
 const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const badge=r=>`<span class="badge r-${r}">${r}</span>`;
@@ -1217,7 +1224,7 @@ async function finishSpecialRevealAudio(s){
 
 function activeGachaSongs(){
   if(selectedGachaGroup==="mix")return enabled();
-  return SONGS.filter(s=>s[1]===selectedGachaGroup);
+  return SONGS.filter(s=>s[1]===selectedGachaGroup&&state.groups[s[1]]&&isSongEnabled(s[0]));
 }
 function gachaPool(){const d=drawnSet();return activeGachaSongs().filter(s=>!d.has(s[0]))}
 function applyMode(){
@@ -1233,7 +1240,7 @@ function renderHomeGroupButtons(){
     ["≒JOY","≒JOY","≒JOYの楽曲だけ"]
   ];
   menu.innerHTML=items.map(([key,label,sub])=>{
-    const n=key==="mix"?enabled().length:SONGS.filter(s=>s[1]===key).length;
+    const n=key==="mix"?enabled().length:SONGS.filter(s=>s[1]===key&&state.groups[s[1]]&&isSongEnabled(s[0])).length;
     if(key==="mix"){
       return `<button class="group-choice" data-g="mix" type="button"><span class="gtext"><img class="mix-wordmark" src="${IKONOIJJOY_LOGO}" alt="#IKONOIJOY"><small>${esc(sub)} ・ ${n}曲</small></span><span class="chev">›</span></button>`;
     }
@@ -1661,17 +1668,23 @@ function renderList(){
       if(hasA!==hasB)return hasA?-1:1;
       return a[0]-b[0];
     });
-  $("list").innerHTML=rows.length?rows.map(s=>{const r=rarOf(s[0]);
-    const mv=autoMv(s[0]);
+  $("list").innerHTML=rows.length?rows.map(s=>{
+    const r=rarOf(s[0]),included=isSongEnabled(s[0]),mv=autoMv(s[0]);
     const mvline=mv?.views!=null?`<div class="ytmeta"><span>${Number(mv.views).toLocaleString("ja-JP")}回</span><span>${esc(mv.group||s[1])}内 ${mv.rank||"-"}位 / ${mv.total||"-"}曲</span>${mv.confidence!=null?`<span>照合 ${Math.round(mv.confidence*100)}%</span>`:""}</div>`:`<div class="ytmeta"><span>MV未照合</span></div>`;
-    return `<div class="row r-${r}${r!=="N"?" hit":""}" data-id="${s[0]}"><div class="meta"><span class="num">${releaseNo[s[0]]}</span><span class="t">${esc(s[2])}</span>${d.has(s[0])?`<span class="got">引いた</span>`:""}<span class="c">${esc(s[3])}</span></div>${mvline}
-    <div class="seg" role="group" aria-label="${esc(s[2])}のレア度">${RAR.map(x=>`<button class="r-${x}" data-r="${x}" aria-pressed="${x===r}">${x}</button>`).join("")}</div></div>`}).join("")
+    return `<div class="row r-${r}${r!=="N"?" hit":""}${included?"":" song-off"}" data-id="${s[0]}">
+      <div class="meta"><span class="num">${releaseNo[s[0]]}</span><span class="t">${esc(s[2])}</span>${d.has(s[0])?`<span class="got">引いた</span>`:""}<span class="c">${esc(s[3])}</span></div>
+      ${mvline}
+      <label class="songinclude"><span><b>ガチャ対象</b>　${included?"含める":"除外中"}</span><span class="sw"><input type="checkbox" data-song-enabled="${s[0]}" ${included?"checked":""}><span></span></span></label>
+      <div class="seg" role="group" aria-label="${esc(s[2])}のレア度">${RAR.map(x=>`<button class="r-${x}" data-r="${x}" aria-pressed="${x===r}">${x}</button>`).join("")}</div>
+    </div>`;
+  }).join("")
     :`<div class="empty">${filter==="hit"?"当たりに設定した曲はまだありません。":"該当する曲がありません。"}</div>`;
   renderSummary();
 }
 function renderSummary(){
   const cnt={};RAR.forEach(r=>cnt[r]=0);SONGS.forEach(s=>cnt[rarOf(s[0])]++);
-  $("summary").innerHTML=RAR.map(r=>`<span>${badge(r)}${cnt[r]}曲</span>`).join("");
+  const includedCount=SONGS.filter(s=>isSongEnabled(s[0])).length;
+  $("summary").innerHTML=`<span><b>ガチャ対象 ${includedCount}/${SONGS.length}曲</b></span>`+RAR.map(r=>`<span>${badge(r)}${cnt[r]}曲</span>`).join("");
   const manualCount=Object.keys(state.rar||{}).length;
   $("danger").innerHTML=confirmReset
     ?`<span>手動設定した${manualCount}曲を解除して、自動レア度に戻しますか?</span><button class="btn warn" id="rsYes">自動レア度に戻す</button><button class="btn" id="rsNo">やめる</button>`
@@ -1687,6 +1700,15 @@ $("list").addEventListener("click",e=>{
   state.rar[id]=r;save();
   renderList();
   renderGacha();
+});
+$("list").addEventListener("change",e=>{
+  const input=e.target.closest("input[data-song-enabled]");if(!input)return;
+  const id=String(input.dataset.songEnabled);
+  if(input.checked)delete state.songEnabled[id];
+  else state.songEnabled[id]=false;
+  carouselOrder=[];
+  save();
+  renderList();renderGroups();renderGacha();renderHomeGroupButtons();renderCarousel();
 });
 $("sortbar").addEventListener("click",e=>{
   const b=e.target.closest("button[data-sort]");if(!b)return;
