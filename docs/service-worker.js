@@ -1,4 +1,4 @@
-const CACHE = 'ikonoijoy-gacha-pwa-v1';
+const CACHE = 'ikonoijoy-gacha-pwa-v2';
 const PRECACHE = [
   './',
   './index.html',
@@ -30,6 +30,20 @@ self.addEventListener('fetch', event => {
 
   // YouTube API / thumbnails / Google Fonts など外部通信は通常のネットワークへ。
   if (url.origin !== self.location.origin) return;
+
+  // 共有MVデータは常にネットワーク最新版を優先。オフライン時だけキャッシュへ。
+  if (url.pathname.endsWith('/data/mv-data.json')) {
+    event.respondWith(
+      fetch(req, { cache: 'no-store' })
+        .then(res => {
+          const copy = res.clone();
+          caches.open(CACHE).then(cache => cache.put(req, copy));
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
 
   // HTMLはオンライン時に最新版を優先。オフラインならキャッシュへ。
   if (req.mode === 'navigate') {
