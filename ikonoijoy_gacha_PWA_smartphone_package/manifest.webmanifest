@@ -1,0 +1,27 @@
+{
+  "id": "./index.html",
+  "name": "イコノイジョイ ガチャ",
+  "short_name": "イコノイガチャ",
+  "description": "イコノイジョイ楽曲ガチャ",
+  "lang": "ja",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f7f6fb",
+  "theme_color": "#ec7fa6",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
