@@ -22,7 +22,7 @@
   filter:drop-shadow(0 0 2px rgba(255,255,255,.98))
          drop-shadow(0 14px 28px rgba(0,0,0,.48));
 }
-.lr-live-lead.on .lr-live-band{animation:lrLiveBandPass 3.28s cubic-bezier(.18,.78,.22,1) both}
+.lr-live-lead.on .lr-live-band{animation:lrLiveBandPass 4.9s cubic-bezier(.18,.78,.22,1) both}
 .lr-live-band::before{
   content:"";position:absolute;inset:0;z-index:2;pointer-events:none;
   background:
@@ -1135,7 +1135,7 @@ function prepareSpecialMediaSources(){
     a2.addEventListener("ended",()=>{
       if(!specialRevealAudioActive)return;
       try{
-        a2.currentTime=.3;
+        a2.currentTime=.6;
         const p=a2.play();if(p?.catch)p.catch(()=>{});
       }catch(e){}
     });
@@ -1146,12 +1146,14 @@ function primeSpecialLrAudio(s){
   prepareSpecialMediaSources();
   const a1=$("specialLrIntroAudio"),a2=$("specialLrRevealAudio");
   specialAudioPrimed=true;
-  [a1,a2].forEach(a=>{
-    try{
-      a.loop=true;a.volume=0;a.currentTime=0;
-      const p=a.play();if(p?.catch)p.catch(()=>{});
-    }catch(e){}
-  });
+  try{
+    a1.loop=true;a1.volume=0;a1.currentTime=0;
+    const p1=a1.play();if(p1?.catch)p1.catch(()=>{});
+  }catch(e){}
+  try{
+    a2.loop=false;a2.volume=0;a2.currentTime=.6;
+    const p2=a2.play();if(p2?.catch)p2.catch(()=>{});
+  }catch(e){}
 }
 function stopSpecialLrMedia(){
   const v=$("specialLrVisual"),a1=$("specialLrIntroAudio"),a2=$("specialLrRevealAudio"),lead=$("specialLrLead");
@@ -1185,7 +1187,7 @@ async function playSpecialLrLead(s){
     if(a2.paused){const p=a2.play();if(p?.catch)p.catch(()=>{})}
   }catch(e){}
   lead.hidden=false;lead.classList.remove("on");void lead.offsetWidth;lead.classList.add("on");
-  await sleep(2770);
+  await sleep(4350);
   await fadeMediaVolume(a1,0,430);
   await sleep(90);
   lead.classList.remove("on");
@@ -1200,8 +1202,8 @@ function startSpecialRevealAudio(s){
   const a2=$("specialLrRevealAudio");
   specialRevealAudioActive=true;
   try{
-    // 二個目の音声は冒頭0.3秒を飛ばす。
-    a2.currentTime=.3;a2.volume=.94;
+    // 二個目の音声は冒頭0.6秒を飛ばす。
+    a2.loop=false;a2.currentTime=.6;a2.volume=.94;
     if(a2.paused){const p=a2.play();if(p?.catch)p.catch(()=>{})}
   }catch(e){}
 }
