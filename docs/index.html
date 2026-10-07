@@ -8,12 +8,13 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}
 /* ---------- Experimental LR live cut-in: 絶対アイドル辞めないで ---------- */
 .lr-live-lead{
-  position:fixed;inset:0;z-index:88;overflow:hidden;pointer-events:none;
+  position:fixed;inset:0;z-index:92;overflow:hidden;pointer-events:none;
   background:rgba(4,6,16,.58);
   backdrop-filter:blur(1.5px);-webkit-backdrop-filter:blur(1.5px);
   opacity:0;transition:opacity .24s ease;
 }
 .lr-live-lead.on{opacity:1}
+.lr-live-lead.handoff{opacity:0!important;transition:opacity .62s cubic-bezier(.22,.7,.18,1)}
 .lr-live-band{
   position:absolute;left:-6vw;top:50%;width:112vw;height:min(78vh,720px);
   transform:translateY(-50%) translateX(-115%);
@@ -235,6 +236,10 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
 .sw input:focus-visible+span{outline:2px solid var(--t2);outline-offset:2px}
 
  .filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.songbulk{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 10px;padding:9px 10px;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+.songbulk .label{font-size:11px;color:var(--ink-dim);margin-right:auto}
+.songbulk .btn{padding:7px 10px;font-size:11px}
+.songbulk .btn.warn{color:#b83255;border-color:rgba(184,50,85,.25)}
 .sortbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 10px}
 .sortbar .label{font-size:11px;color:var(--ink-dim);margin-right:2px}
 .sortbar .chip{padding:6px 10px}
@@ -688,6 +693,38 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
   .ten-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 
+/* ---------- landscape immersive layout ---------- */
+html,body{min-height:100%;min-height:100dvh}
+.reveal,.ten-reveal,.video-modal,.lr-cutscene,.lr-live-lead{box-sizing:border-box}
+@media (orientation:landscape) and (max-height:700px){
+  html,body{width:100%;height:100%;height:100dvh;min-height:100dvh;overflow-x:hidden}
+  body{background-attachment:scroll;overscroll-behavior:none}
+  .app{max-width:none!important;width:100%;min-height:100dvh;margin:0;padding:max(7px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(7px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))!important}
+  #view-gacha{min-height:calc(100dvh - 14px)}
+  .gamehead{margin-bottom:6px}.game-title{font-size:20px}.game-kicker{margin-bottom:0}.gearbtn{width:40px;height:40px}
+  .home-shell{min-height:calc(100dvh - 62px);box-sizing:border-box;border-radius:18px;padding:10px 16px;display:grid;align-items:center}
+  .home-grid{grid-template-columns:minmax(180px,.72fr) minmax(330px,1.28fr)!important;gap:14px}
+  .home-emblem{padding:4px}.home-emblem img{height:min(27dvh,118px)!important}.home-emblem h2{font-size:22px;margin-top:2px}
+  .group-menu{gap:6px}.group-choice{min-height:54px;padding-top:6px;padding-bottom:6px;border-radius:15px}.group-choice .glogo{height:40px}.group-choice .gtext b{font-size:18px}
+  .group-topline{margin-bottom:6px}.group-topline .roundbtn{width:36px;height:36px}.group-heading h2{font-size:22px}
+  .group-layout{grid-template-columns:minmax(320px,1.12fr) minmax(270px,.88fr)!important;gap:10px;align-items:stretch}
+  .carousel-panel,.pull-panel{border-radius:18px;padding:9px}
+  .mv-carousel-wrap{height:calc(100dvh - 112px)!important;min-height:255px;max-height:420px}
+  .selected-song{margin-top:5px}.selected-song .title{font-size:13px}
+  .group-brand-card{padding:8px}.group-brand-card img{height:min(17dvh,70px)}.group-brand-card h3{margin:2px 0;font-size:20px}.group-brand-card p{margin:2px 0 6px;font-size:11px}
+  .gacha-actions{gap:7px}.drawbtn{padding:10px 8px}.drawbtn strong{font-size:17px}.sub-actions{margin-top:7px}.note{margin-top:6px}
+  .odds{margin-top:7px}.history{margin-top:7px}
+  .reveal,.ten-reveal,.video-modal,.lr-cutscene,.lr-live-lead{inset:0;width:100vw;height:100dvh;max-width:none;max-height:none}
+  .reveal,.ten-reveal,.video-modal{padding:max(6px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(6px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left))}
+  .ten-panel.ten-ticket-panel{width:100%;max-width:none;min-height:calc(100dvh - 12px);max-height:calc(100dvh - 12px);box-sizing:border-box;border-radius:16px;padding:10px;overflow:auto}
+  .ten-head{margin-bottom:6px}.ten-head h2{font-size:18px}
+  .ten-grid.ticket-grid{grid-template-columns:repeat(5,minmax(100px,1fr))!important;gap:7px}
+  .ten-slot{min-height:calc((100dvh - 105px)/2);max-height:225px}
+  .mini-ticket{width:104px;height:67px}.ten-skip{right:max(12px,env(safe-area-inset-right));bottom:max(10px,env(safe-area-inset-bottom))}
+  .lr-cutscene .lr-intro-mark{width:min(640px,78vw);height:min(260px,58dvh)}
+  .lr-cutscene .lr-overlay-mark{width:78px;height:78px;margin-bottom:8px}.lr-cutscene .lr-copy .stars{font-size:25px}.lr-cutscene .lr-copy .lr-big{font-size:64px}
+}
+
 </style>
 
 <div class="app">
@@ -790,6 +827,11 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
       </div>
       <div class="danger" id="danger"></div>
       <div class="filters" id="filters"></div>
+      <div class="songbulk" id="songBulk">
+        <span class="label" id="songBulkLabel">表示中の曲を一括操作</span>
+        <button class="btn" id="songBulkInclude" type="button">表示中をすべて含める</button>
+        <button class="btn warn" id="songBulkExclude" type="button">表示中を一括除外</button>
+      </div>
       <div class="sortbar" id="sortbar" aria-label="並べ替え">
         <span class="label">並べ替え</span>
         <button class="chip" data-sort="ranking" aria-pressed="true">ランキング</button>
@@ -1172,7 +1214,7 @@ function stopSpecialLrMedia(){
   if(a2)a2.muted=true;
   [v,a1,a2].forEach(m=>{if(!m)return;try{m.pause();m.currentTime=0}catch(e){}});
   if(a1)a1.volume=1;if(a2)a2.volume=1;
-  if(lead){lead.classList.remove("on");lead.hidden=true}
+  if(lead){lead.classList.remove("on","handoff");lead.hidden=true}
   specialAudioPrimed=false;
 }
 function fadeMediaVolume(el,to,ms=350){
@@ -1187,7 +1229,7 @@ function fadeMediaVolume(el,to,ms=350){
     requestAnimationFrame(step);
   });
 }
-async function playSpecialLrLead(s){
+async function playSpecialLrLead(s,onHandoff){
   if(!isSpecialLrSong(s))return;
   prepareSpecialMediaSources();
   const lead=$("specialLrLead"),v=$("specialLrVisual"),a1=$("specialLrIntroAudio"),a2=$("specialLrRevealAudio");
@@ -1199,12 +1241,14 @@ async function playSpecialLrLead(s){
     a2.currentTime=.6;a2.volume=1;a2.muted=true;
     if(a2.paused){const p=a2.play();if(p?.catch)p.catch(()=>{})}
   }catch(e){}
-  lead.hidden=false;lead.classList.remove("on");void lead.offsetWidth;lead.classList.add("on");
-  await sleep(4350);
-  await fadeMediaVolume(a1,0,430);
-  await sleep(90);
-  lead.classList.remove("on");
+  lead.hidden=false;lead.classList.remove("on","handoff");void lead.offsetWidth;lead.classList.add("on");
+  await sleep(4050);
+  // 帯が抜け始めるタイミングで、背面の白背景ロゴ演出を同時に開始する。
+  if(typeof onHandoff==="function")onHandoff();
+  lead.classList.add("handoff");
+  await fadeMediaVolume(a1,0,520);
   await sleep(120);
+  lead.classList.remove("on","handoff");
   lead.hidden=true;
   try{v.pause();v.currentTime=0}catch(e){}
   try{a1.muted=true;a1.pause();a1.currentTime=0}catch(e){}
@@ -1361,8 +1405,19 @@ function renderGacha(){
   $("histBody").innerHTML=hist.length?`<ol>${hist.slice().reverse().map(id=>{const s=byId[id];if(!s)return"";return `<li>${badge(rarOf(id))}<span class="t">${esc(s[2])}</span><span class="c">${esc(s[3]||s[1])}</span></li>`}).join("")}</ol>`:`<div class="none">まだ引いていません。</div>`;
 }
 
+function isStandaloneDisplay(){
+  return window.matchMedia?.("(display-mode: standalone)")?.matches||window.matchMedia?.("(display-mode: fullscreen)")?.matches||navigator.standalone===true;
+}
+async function tryEnterFullscreen(){
+  if(isStandaloneDisplay()||document.fullscreenElement)return;
+  if(!window.matchMedia?.("(orientation: landscape)")?.matches)return;
+  const el=document.documentElement;
+  if(!document.fullscreenEnabled||!el.requestFullscreen)return;
+  try{await el.requestFullscreen({navigationUI:"hide"})}catch(e){/* iPhone Safari等は非対応/拒否でもCSSで最大化 */}
+}
+
 function initGachaUi(){
-  $("groupMenu").addEventListener("click",e=>{const b=e.target.closest("[data-g]");if(b)openGroup(b.dataset.g)});
+  $("groupMenu").addEventListener("click",e=>{const b=e.target.closest("[data-g]");if(b){tryEnterFullscreen();openGroup(b.dataset.g)}});
   $("groupBack").addEventListener("click",closeGroup);
   $("settingsGear").addEventListener("click",()=>show("settings"));
   $("carouselUp").addEventListener("click",()=>moveCarousel(-1));
@@ -1378,8 +1433,8 @@ function initGachaUi(){
   cw.addEventListener("pointerdown",e=>{carouselPointerY=e.clientY});
   cw.addEventListener("pointerup",e=>{if(carouselPointerY==null)return;const dy=e.clientY-carouselPointerY;carouselPointerY=null;if(Math.abs(dy)>45)moveCarousel(dy>0?-1:1)});
   cw.addEventListener("pointercancel",()=>{carouselPointerY=null});
-  $("singleBtn").addEventListener("click",pull);
-  $("tenBtn").addEventListener("click",pullTen);
+  $("singleBtn").addEventListener("click",()=>{tryEnterFullscreen();pull()});
+  $("tenBtn").addEventListener("click",()=>{tryEnterFullscreen();pullTen()});
   $("playMvBtn").addEventListener("click",playSelectedMv);
   $("songInfoBtn").addEventListener("click",()=>{const s=selectedCarouselSong();if(!s)return;const mv=autoMv(s[0]);alert(`${s[2]}
 ${s[3]||s[1]}
@@ -1387,6 +1442,9 @@ ${s[3]||s[1]}
 再生回数: ${Number(mv.views).toLocaleString("ja-JP")}`:""}${mv?.rank?`
 ${mv.group||s[1]}内 ${mv.rank}位 / ${mv.total}曲`:""}`)});
 }
+
+window.addEventListener("orientationchange",()=>setTimeout(()=>{renderCarousel();},180));
+window.addEventListener("resize",()=>{if(window.matchMedia?.("(orientation: landscape)")?.matches)renderCarousel();});
 
 /* ---------- reveal sequence ---------- */
 const sleep=ms=>new Promise(r=>setTimeout(r,reduce?Math.min(ms,60):ms));
@@ -1439,12 +1497,8 @@ function fillResultCard(s,r){
   $("cNo").textContent="No."+String(releaseNo[s[0]]).padStart(3,"0");
 }
 async function playLrCutscene(s){
-  // ID68だけ、ガチャ画面上に斜めライブ映像を先にカットイン。
-  // 画面=34秒動画、音声=33秒動画。終わったら既存LR演出へ。
-  if(isSpecialLrSong(s)){
-    await playSpecialLrLead(s);
-    startSpecialRevealAudio(s);
-  }
+  // ID68はライブ帯の背面に次のLRイントロを先に用意し、切替時の空白フレームをなくす。
+  const special=isSpecialLrSong(s);
   const box=$("lrCutscene"),video=$("lrCutinVideo"),bg=$("lrCutinBg"),mv=autoMv(s[0]),src=lrCutinSource(s);
   const introMark=lrIntroLogoHtml(s);
   const overlayMark=lrOverlayLogoHtml(s);
@@ -1454,12 +1508,20 @@ async function playLrCutscene(s){
   box.classList.remove("phase-reveal","intro-play");
   video.hidden=true;
   box.hidden=false;
+  // ロゴ画像を先にdecodeして、帯が終わった瞬間の描画待ちを避ける。
+  const introImgs=[...$("lrIntroMark").querySelectorAll("img")];
+  await Promise.all(introImgs.map(img=>img.decode?img.decode().catch(()=>{}):Promise.resolve()));
 
-  // 添付動画のように、暗転から横一線の光が走り、白背景とグループロゴが現れる。
-  // この段階では曲名・LR表記はまだ出さない。
+  // 暗転→白背景ロゴ。特別演出ではライブ帯が抜ける前から背面で開始してクロスフェードする。
   void box.offsetWidth;
-  box.classList.add("intro-play");
-  await sleep(1580);
+  if(special){
+    await playSpecialLrLead(s,()=>{void box.offsetWidth;box.classList.add("intro-play")});
+    startSpecialRevealAudio(s);
+    await sleep(930);
+  }else{
+    box.classList.add("intro-play");
+    await sleep(1580);
+  }
 
   // その後、現在のMVサムネ（ライブ素材設定時は動画）へゆっくりクロスフェードし、
   // グループロゴ + ★★★★★ + LR を表示する。
@@ -1647,9 +1709,9 @@ function initRarityMixUi(){
   });
 }
 function renderGroups(){
-  $("groups").innerHTML=GROUPS.map((g,i)=>{const n=SONGS.filter(s=>s[1]===g.key).length;
+  $("groups").innerHTML=GROUPS.map((g,i)=>{const all=SONGS.filter(s=>s[1]===g.key).length,n=SONGS.filter(s=>s[1]===g.key&&isSongEnabled(s[0])).length;
     const ic=LOGOS[g.key]?`<img src="${LOGOS[g.key]}" alt="">`:`<span>♪</span>`;
-    return `<label class="grow" for="g${i}"><span class="ic">${ic}</span><span class="gname">${g.label}${g.sub?`<small>${g.sub}</small>`:""}</span><span class="gct">${n}曲</span>
+    return `<label class="grow" for="g${i}"><span class="ic">${ic}</span><span class="gname">${g.label}${g.sub?`<small>${g.sub}</small>`:""}</span><span class="gct">${n}/${all}曲</span>
     <span class="sw"><input type="checkbox" id="g${i}" data-g="${g.key}" ${state.groups[g.key]?"checked":""}><span></span></span></label>`}).join("");
   $("groups").querySelectorAll("input").forEach(el=>el.addEventListener("change",()=>{state.groups[el.dataset.g]=el.checked;save();renderGacha()}));
 }
@@ -1658,6 +1720,35 @@ function renderFilters(){
   $("filters").innerHTML=opts.map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${filter===k}">${l}</button>`).join("");
   $("filters").querySelectorAll("button").forEach(b=>b.addEventListener("click",()=>{filter=b.dataset.f;renderFilters();renderList()}));
 }
+function filteredSongsForBulk(){
+  const q=query.trim().toLowerCase();
+  return SONGS.filter(s=>(filter==="all"||(filter==="hit"?rarOf(s[0])!=="N":s[1]===filter))&&(!q||s[2].toLowerCase().includes(q)));
+}
+function updateSongBulkUi(){
+  const targets=filteredSongsForBulk();
+  const label=$("songBulkLabel");
+  if(label)label.textContent="表示中 "+targets.length+"曲を一括操作";
+  const inc=$("songBulkInclude"),exc=$("songBulkExclude");
+  if(inc)inc.disabled=!targets.length;
+  if(exc)exc.disabled=!targets.length;
+}
+function refreshAfterSongBulk(){
+  carouselOrder=[];save();
+  renderList();renderGroups();renderGacha();renderHomeGroupButtons();renderCarousel();
+}
+function setBulkSongEnabled(value){
+  const targets=filteredSongsForBulk();
+  if(!targets.length)return;
+  if(!value&&!confirm(targets.length+"曲をガチャ対象から一括除外しますか？"))return;
+  targets.forEach(song=>{
+    const id=String(song[0]);
+    if(value)delete state.songEnabled[id];
+    else state.songEnabled[id]=false;
+  });
+  refreshAfterSongBulk();
+}
+$("songBulkInclude")?.addEventListener("click",()=>setBulkSongEnabled(true));
+$("songBulkExclude")?.addEventListener("click",()=>setBulkSongEnabled(false));
 function renderList(){
   const q=query.trim().toLowerCase(),d=drawnSet();
   const rows=SONGS
@@ -1686,6 +1777,7 @@ function renderList(){
   }).join("")
     :`<div class="empty">${filter==="hit"?"当たりに設定した曲はまだありません。":"該当する曲がありません。"}</div>`;
   renderSummary();
+  updateSongBulkUi();
 }
 function renderSummary(){
   const cnt={};RAR.forEach(r=>cnt[r]=0);SONGS.forEach(s=>cnt[rarOf(s[0])]++);
