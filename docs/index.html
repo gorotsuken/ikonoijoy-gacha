@@ -535,6 +535,61 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
 .mini-ticket .face b{font-family:var(--f-latin);font-size:11px;letter-spacing:.12em;color:var(--ink)}
 .mini-ticket .face small{font-size:9px;color:var(--ink-dim);margin-top:2px}
 .ten-ticket-label{font-size:11px;color:var(--ink-dim);font-weight:700;letter-spacing:.08em}
+
+/* 実験: 10連のLRチケットは開封前から虹色のオーラをまとう */
+.ten-slot.lr-omen:not(.revealed) .ten-ticket-wrap::before,
+.ten-slot.lr-omen:not(.revealed) .ten-ticket-wrap::after{
+  content:"";position:absolute;left:50%;top:50%;pointer-events:none;border-radius:22px;
+  transform:translate(-50%,-50%);z-index:-1;
+}
+.ten-slot.lr-omen:not(.revealed) .ten-ticket-wrap::before{
+  width:154px;height:112px;
+  background:conic-gradient(from 0deg,#ff68b6,#ffd45f,#6eea93,#59d7ff,#9b78ff,#ff68b6);
+  filter:blur(17px);opacity:.58;
+  animation:lrTicketAuraSpin 3.1s linear infinite,lrTicketAuraPulse 1.45s ease-in-out infinite;
+}
+.ten-slot.lr-omen:not(.revealed) .ten-ticket-wrap::after{
+  width:138px;height:98px;
+  background:radial-gradient(circle,rgba(255,255,255,.45) 0 28%,rgba(255,255,255,0) 68%);
+  filter:blur(7px);opacity:.68;
+  animation:lrTicketAuraBreath 1.2s ease-in-out infinite alternate;
+}
+.ten-slot.lr-omen:not(.revealed) .mini-ticket{
+  border-color:rgba(255,255,255,.82);
+  box-shadow:
+    0 0 0 2px rgba(255,255,255,.72),
+    0 0 12px rgba(255,112,190,.55),
+    0 0 20px rgba(255,216,86,.42),
+    0 0 30px rgba(79,211,255,.42),
+    0 8px 20px rgba(72,50,125,.22);
+}
+.ten-slot.lr-omen:not(.revealed) .mini-ticket::after{
+  box-shadow:0 0 11px 4px rgba(255,255,255,.85);
+}
+.ten-slot.lr-omen:not(.revealed) .ten-ticket-label{
+  font-family:var(--f-latin);font-weight:900;
+  background:linear-gradient(90deg,#ef5ca8,#d69a00,#24a96c,#1688c8,#7251d2,#ef5ca8);
+  background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
+  animation:flow 2s linear infinite;
+}
+.ten-slot.lr-last-locked:not(.revealed){cursor:not-allowed}
+.ten-slot.lr-last-locked:not(.revealed) .ten-ticket-wrap{animation:lrLastLockedHint .48s ease}
+@keyframes lrTicketAuraSpin{
+  to{transform:translate(-50%,-50%) rotate(360deg)}
+}
+@keyframes lrTicketAuraPulse{
+  0%,100%{opacity:.42;filter:blur(18px) saturate(1.05)}
+  50%{opacity:.82;filter:blur(14px) saturate(1.45)}
+}
+@keyframes lrTicketAuraBreath{
+  from{transform:translate(-50%,-50%) scale(.92);opacity:.42}
+  to{transform:translate(-50%,-50%) scale(1.10);opacity:.82}
+}
+@keyframes lrLastLockedHint{
+  0%,100%{transform:none}
+  30%{transform:translateX(-5px)}
+  65%{transform:translateX(5px)}
+}
 .ten-slot.drop .ten-ticket-wrap{animation:tenTicketDrop .72s cubic-bezier(.3,1.35,.5,1) both;animation-delay:var(--delay,0ms)}
 @keyframes tenTicketDrop{0%{transform:translateY(-75vh) rotate(-12deg);opacity:0}72%{transform:translateY(6px) rotate(1deg);opacity:1}100%{transform:none;opacity:1}}
 .ten-slot.opening .mini-ticket{transform:perspective(650px) rotateX(78deg) scale(.76);opacity:0;filter:blur(2px)}
@@ -1568,16 +1623,29 @@ function pullTen(){
   busy=true;
   const take=Math.min(10,p.length),draws=[];
   for(let i=0;i<take;i++){const j=randInt(p.length);draws.push(p.splice(j,1)[0])}
+
+  // 10連にLRが1曲だけなら、その1曲を10枚目（最後）へ移動。
+  const lrIndexes=draws.map((song,i)=>rarOf(song[0])==="LR"?i:-1).filter(i=>i>=0);
+  let singleLrIndex=-1;
+  if(lrIndexes.length===1){
+    const [lrSong]=draws.splice(lrIndexes[0],1);
+    draws.push(lrSong);
+    singleLrIndex=draws.length-1;
+  }
+
   state.drawn.push(...draws.map(s=>s[0]));save();
-  tenSession={draws,opened:new Set(),skipping:false};
+  tenSession={draws,opened:new Set(),skipping:false,singleLrIndex};
   $("tenTitle").textContent=`${take}連ガチャ`;
   $("tenProgress").textContent=`${take}枚のチケットを1枚ずつタップして開けてください`;
   $("tenClose").hidden=true;$("tenActions").hidden=true;
   $("tenSkip").hidden=false;$("tenSkip").disabled=false;$("tenSkip").textContent="SKIP ▶";
   $("tenGrid").innerHTML=draws.map((s,i)=>{
     const r=rarOf(s[0]);
-    return `<button class="ten-slot r-${r} drop" data-ten-index="${i}" type="button" style="--delay:${i*75}ms" aria-label="${i+1}枚目のチケットを開ける">
-      <span class="ten-ticket-wrap"><span class="mini-ticket"><span class="stub"><span>GACHA</span></span><span class="face">${ticketLogoHtml(s,true)}<small>TICKET</small></span></span><span class="ten-ticket-label">TAP TO OPEN</span></span>
+    const lrClass=r==="LR"?" lr-omen":"";
+    const lastClass=tenSession.singleLrIndex===i?" lr-last":"";
+    const label=tenSession.singleLrIndex===i?"LAST TICKET":"TAP TO OPEN";
+    return `<button class="ten-slot r-${r} drop${lrClass}${lastClass}" data-ten-index="${i}" type="button" style="--delay:${i*75}ms" aria-label="${i+1}枚目のチケットを開ける">
+      <span class="ten-ticket-wrap"><span class="mini-ticket"><span class="stub"><span>GACHA</span></span><span class="face">${ticketLogoHtml(s,true)}<small>TICKET</small></span></span><span class="ten-ticket-label">${label}</span></span>
       ${tenResultHtml(s)}
     </button>`;
   }).join("");
@@ -1590,8 +1658,27 @@ async function highRareTenEffect(r,slot){
   slot.classList.add("high-hit");
   await sleep(r==="LR"?950:720);
 }
+function isTenLastLrLocked(i){
+  const sess=tenSession;
+  return !!sess&&sess.singleLrIndex===i&&sess.opened.size<sess.draws.length-1;
+}
+function showTenLastLrHint(i){
+  const slot=$("tenGrid")?.querySelector(`[data-ten-index="${i}"]`);
+  if(!slot)return;
+  slot.classList.remove("lr-last-locked");void slot.offsetWidth;slot.classList.add("lr-last-locked");
+  const label=slot.querySelector(".ten-ticket-label");
+  const prev=label?.textContent||"LAST TICKET";
+  if(label)label.textContent="最後に開封";
+  $("tenProgress").textContent="このLRチケットは最後に開封されます";
+  setTimeout(()=>{
+    slot.classList.remove("lr-last-locked");
+    if(label&&!slot.classList.contains("revealed"))label.textContent=prev;
+    updateTenProgress();
+  },900);
+}
 async function openTenIndex(i,fromSkip=false){
   const sess=tenSession;if(!sess||sess.opened.has(i))return false;
+  if(!fromSkip&&isTenLastLrLocked(i)){showTenLastLrHint(i);return false;}
   const slot=$("tenGrid").querySelector(`[data-ten-index="${i}"]`);if(!slot)return false;
   sess.opened.add(i);slot.disabled=true;slot.classList.add("opening");
   const s=sess.draws[i],r=rarOf(s[0]);
@@ -1632,6 +1719,7 @@ $("tenGrid").addEventListener("click",e=>{
   if(tenSession?.skipping)return;
   const b=e.target.closest("[data-ten-index]");if(!b)return;
   const i=Number(b.dataset.tenIndex);
+  if(isTenLastLrLocked(i)){showTenLastLrHint(i);return}
   primeSpecialLrAudio(tenSession?.draws?.[i]);
   openTenIndex(i,false);
 });
