@@ -572,8 +572,6 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
   background-size:200% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;
   animation:flow 2s linear infinite;
 }
-.ten-slot.lr-last-locked:not(.revealed){cursor:not-allowed}
-.ten-slot.lr-last-locked:not(.revealed) .ten-ticket-wrap{animation:lrLastLockedHint .48s ease}
 @keyframes lrTicketAuraSpin{
   to{transform:translate(-50%,-50%) rotate(360deg)}
 }
@@ -584,11 +582,6 @@ button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid
 @keyframes lrTicketAuraBreath{
   from{transform:translate(-50%,-50%) scale(.92);opacity:.42}
   to{transform:translate(-50%,-50%) scale(1.10);opacity:.82}
-}
-@keyframes lrLastLockedHint{
-  0%,100%{transform:none}
-  30%{transform:translateX(-5px)}
-  65%{transform:translateX(5px)}
 }
 .ten-slot.drop .ten-ticket-wrap{animation:tenTicketDrop .72s cubic-bezier(.3,1.35,.5,1) both;animation-delay:var(--delay,0ms)}
 @keyframes tenTicketDrop{0%{transform:translateY(-75vh) rotate(-12deg);opacity:0}72%{transform:translateY(6px) rotate(1deg);opacity:1}100%{transform:none;opacity:1}}
@@ -1642,10 +1635,8 @@ function pullTen(){
   $("tenGrid").innerHTML=draws.map((s,i)=>{
     const r=rarOf(s[0]);
     const lrClass=r==="LR"?" lr-omen":"";
-    const lastClass=tenSession.singleLrIndex===i?" lr-last":"";
-    const label=tenSession.singleLrIndex===i?"LAST TICKET":"TAP TO OPEN";
-    return `<button class="ten-slot r-${r} drop${lrClass}${lastClass}" data-ten-index="${i}" type="button" style="--delay:${i*75}ms" aria-label="${i+1}枚目のチケットを開ける">
-      <span class="ten-ticket-wrap"><span class="mini-ticket"><span class="stub"><span>GACHA</span></span><span class="face">${ticketLogoHtml(s,true)}<small>TICKET</small></span></span><span class="ten-ticket-label">${label}</span></span>
+    return `<button class="ten-slot r-${r} drop${lrClass}" data-ten-index="${i}" type="button" style="--delay:${i*75}ms" aria-label="${i+1}枚目のチケットを開ける">
+      <span class="ten-ticket-wrap"><span class="mini-ticket"><span class="stub"><span>GACHA</span></span><span class="face">${ticketLogoHtml(s,true)}<small>TICKET</small></span></span><span class="ten-ticket-label">TAP TO OPEN</span></span>
       ${tenResultHtml(s)}
     </button>`;
   }).join("");
@@ -1658,27 +1649,8 @@ async function highRareTenEffect(r,slot){
   slot.classList.add("high-hit");
   await sleep(r==="LR"?950:720);
 }
-function isTenLastLrLocked(i){
-  const sess=tenSession;
-  return !!sess&&sess.singleLrIndex===i&&sess.opened.size<sess.draws.length-1;
-}
-function showTenLastLrHint(i){
-  const slot=$("tenGrid")?.querySelector(`[data-ten-index="${i}"]`);
-  if(!slot)return;
-  slot.classList.remove("lr-last-locked");void slot.offsetWidth;slot.classList.add("lr-last-locked");
-  const label=slot.querySelector(".ten-ticket-label");
-  const prev=label?.textContent||"LAST TICKET";
-  if(label)label.textContent="最後に開封";
-  $("tenProgress").textContent="このLRチケットは最後に開封されます";
-  setTimeout(()=>{
-    slot.classList.remove("lr-last-locked");
-    if(label&&!slot.classList.contains("revealed"))label.textContent=prev;
-    updateTenProgress();
-  },900);
-}
 async function openTenIndex(i,fromSkip=false){
   const sess=tenSession;if(!sess||sess.opened.has(i))return false;
-  if(!fromSkip&&isTenLastLrLocked(i)){showTenLastLrHint(i);return false;}
   const slot=$("tenGrid").querySelector(`[data-ten-index="${i}"]`);if(!slot)return false;
   sess.opened.add(i);slot.disabled=true;slot.classList.add("opening");
   const s=sess.draws[i],r=rarOf(s[0]);
@@ -1719,7 +1691,6 @@ $("tenGrid").addEventListener("click",e=>{
   if(tenSession?.skipping)return;
   const b=e.target.closest("[data-ten-index]");if(!b)return;
   const i=Number(b.dataset.tenIndex);
-  if(isTenLastLrLocked(i)){showTenLastLrHint(i);return}
   primeSpecialLrAudio(tenSession?.draws?.[i]);
   openTenIndex(i,false);
 });
